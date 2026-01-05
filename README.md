@@ -74,4 +74,4 @@ This enables seamless SSH certificate authentication through your configured bro
 
 ## License
 
-See [LICENSE](LICENSE) for details.
+Licensed under the Apache License, Version 2.0. See [LICENSE-2.0.txt](LICENSE-2.0.txt) for details.
