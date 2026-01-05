@@ -4,3 +4,14 @@
 xcuserdata/
 DerivedData/
 .DS_Store
+
+# Fetched binary and extracted files (downloaded from GitHub releases)
+Resources/epithet
+Resources/LICENSE-2.0.txt
+Resources/README.md
+
+# Icon generation artifacts
+*.iconset/
+
+# Claude Code settings
+.claude/
