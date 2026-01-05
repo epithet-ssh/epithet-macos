@@ -15,3 +15,6 @@ Resources/README.md
 
 # Claude Code settings
 .claude/
+
+# Local environment (direnv)
+.envrc
