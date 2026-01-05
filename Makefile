@@ -91,10 +91,16 @@ sign: bundle-release
 ifndef DEVELOPER_ID
 	$(error DEVELOPER_ID is not set. Example: "Developer ID Application: Your Name (TEAMID)")
 endif
+	@echo "Signing embedded epithet binary..."
+	@codesign --force --sign "$(DEVELOPER_ID)" \
+		--options runtime \
+		--timestamp \
+		"$(BUNDLE_DIR)/Contents/Resources/epithet"
 	@echo "Signing app bundle..."
-	@codesign --deep --force --verify --verbose \
+	@codesign --force --verify --verbose \
 		--sign "$(DEVELOPER_ID)" \
 		--options runtime \
+		--timestamp \
 		"$(BUNDLE_DIR)"
 	@echo "App bundle signed"
 
