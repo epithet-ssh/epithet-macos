@@ -7,7 +7,7 @@
     <key>CFBundleExecutable</key>
     <string>EpithetAgent</string>
     <key>CFBundleIdentifier</key>
-    <string>com.epithet.agent</string>
+    <string>dev.epithet.agent</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
