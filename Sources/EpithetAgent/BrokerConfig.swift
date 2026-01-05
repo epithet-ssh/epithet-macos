@@ -41,7 +41,7 @@ enum Verbosity: Int, Codable, CaseIterable {
 
 struct BrokerConfig: Codable, Identifiable, Hashable {
     var name: String
-    var caURL: String
+    var caURLs: [String]
     var authMethod: AuthMethod
     var oidcIssuer: String?
     var oidcClientID: String?
@@ -56,7 +56,7 @@ struct BrokerConfig: Codable, Identifiable, Hashable {
 
     init(
         name: String,
-        caURL: String = "",
+        caURLs: [String] = [],
         authMethod: AuthMethod = .autoDiscover,
         oidcIssuer: String? = nil,
         oidcClientID: String? = nil,
@@ -68,7 +68,7 @@ struct BrokerConfig: Codable, Identifiable, Hashable {
         verbosity: Verbosity = .info
     ) {
         self.name = name
-        self.caURL = caURL
+        self.caURLs = caURLs
         self.authMethod = authMethod
         self.oidcIssuer = oidcIssuer
         self.oidcClientID = oidcClientID
@@ -87,10 +87,17 @@ struct BrokerConfig: Codable, Identifiable, Hashable {
             errors.append("Name is required")
         }
 
-        if caURL.trimmingCharacters(in: .whitespaces).isEmpty {
-            errors.append("CA URL is required")
-        } else if !caURL.lowercased().hasPrefix("https://") {
-            errors.append("CA URL must be HTTPS")
+        if caURLs.isEmpty {
+            errors.append("At least one CA URL is required")
+        } else {
+            for (index, url) in caURLs.enumerated() {
+                let trimmed = url.trimmingCharacters(in: .whitespaces)
+                if trimmed.isEmpty {
+                    errors.append("CA URL \(index + 1) is empty")
+                } else if !trimmed.lowercased().hasPrefix("https://") {
+                    errors.append("CA URL \(index + 1) must be HTTPS")
+                }
+            }
         }
 
         switch authMethod {

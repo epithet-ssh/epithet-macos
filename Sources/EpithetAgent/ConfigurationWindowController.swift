@@ -10,7 +10,11 @@ class ConfigurationWindowController: NSWindowController {
 
     // Detail form fields
     private var nameField: NSTextField!
-    private var caURLField: NSTextField!
+    private var caURLsTableView: NSTableView!
+    private var caURLsScrollView: NSScrollView!
+    private var addURLButton: NSButton!
+    private var removeURLButton: NSButton!
+    private var currentCAURLs: [String] = []
     private var authMethodPopup: NSPopUpButton!
     private var oidcIssuerField: NSTextField!
     private var oidcClientIDField: NSTextField!
@@ -161,9 +165,9 @@ class ConfigurationWindowController: NSWindowController {
         let nameRow = createLabeledField(label: "Name:", field: &nameField)
         mainStack.addArrangedSubview(nameRow)
 
-        // CA URL field
-        let caURLRow = createLabeledField(label: "CA URL:", field: &caURLField, placeholder: "https://ca.example.com", width: 450)
-        mainStack.addArrangedSubview(caURLRow)
+        // CA URLs list
+        let caURLsRow = createCAURLsRow()
+        mainStack.addArrangedSubview(caURLsRow)
 
         // Auth method
         let authMethodRow = createAuthMethodRow()
@@ -216,11 +220,12 @@ class ConfigurationWindowController: NSWindowController {
 
         scrollView.documentView = detailContainer
 
-        // Make document view fill scroll view width
+        // Make document view fill scroll view
         NSLayoutConstraint.activate([
             detailContainer.leadingAnchor.constraint(equalTo: scrollView.contentView.leadingAnchor),
             detailContainer.trailingAnchor.constraint(equalTo: scrollView.contentView.trailingAnchor),
-            detailContainer.topAnchor.constraint(equalTo: scrollView.contentView.topAnchor)
+            detailContainer.topAnchor.constraint(equalTo: scrollView.contentView.topAnchor),
+            detailContainer.heightAnchor.constraint(greaterThanOrEqualTo: scrollView.contentView.heightAnchor)
         ])
 
         return scrollView
@@ -248,6 +253,91 @@ class ConfigurationWindowController: NSWindowController {
         row.addArrangedSubview(field)
 
         return row
+    }
+
+    private func createCAURLsRow() -> NSStackView {
+        let row = NSStackView()
+        row.orientation = .horizontal
+        row.spacing = 8
+        row.alignment = .top
+
+        let label = NSTextField(labelWithString: "CA URLs:")
+        label.widthAnchor.constraint(equalToConstant: 100).isActive = true
+        label.alignment = .right
+
+        // Container for table and buttons
+        let container = NSStackView()
+        container.orientation = .vertical
+        container.spacing = 4
+        container.alignment = .leading
+
+        // Scroll view for table
+        caURLsScrollView = NSScrollView()
+        caURLsScrollView.translatesAutoresizingMaskIntoConstraints = false
+        caURLsScrollView.hasVerticalScroller = true
+        caURLsScrollView.borderType = .bezelBorder
+
+        // Table view
+        caURLsTableView = NSTableView()
+        caURLsTableView.delegate = self
+        caURLsTableView.dataSource = self
+        caURLsTableView.headerView = nil
+        caURLsTableView.rowHeight = 22
+        caURLsTableView.usesAlternatingRowBackgroundColors = true
+
+        let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("url"))
+        column.width = 430
+        column.isEditable = true
+        caURLsTableView.addTableColumn(column)
+
+        caURLsScrollView.documentView = caURLsTableView
+
+        NSLayoutConstraint.activate([
+            caURLsScrollView.widthAnchor.constraint(equalToConstant: 450),
+            caURLsScrollView.heightAnchor.constraint(equalToConstant: 80)
+        ])
+
+        container.addArrangedSubview(caURLsScrollView)
+
+        // Button row
+        let buttonRow = NSStackView()
+        buttonRow.orientation = .horizontal
+        buttonRow.spacing = 4
+
+        addURLButton = NSButton(title: "+", target: self, action: #selector(addCAURL))
+        addURLButton.bezelStyle = .smallSquare
+        addURLButton.widthAnchor.constraint(equalToConstant: 24).isActive = true
+
+        removeURLButton = NSButton(title: "−", target: self, action: #selector(removeCAURL))
+        removeURLButton.bezelStyle = .smallSquare
+        removeURLButton.widthAnchor.constraint(equalToConstant: 24).isActive = true
+
+        buttonRow.addArrangedSubview(addURLButton)
+        buttonRow.addArrangedSubview(removeURLButton)
+
+        container.addArrangedSubview(buttonRow)
+
+        row.addArrangedSubview(label)
+        row.addArrangedSubview(container)
+
+        return row
+    }
+
+    @objc private func addCAURL() {
+        currentCAURLs.append("https://")
+        caURLsTableView.reloadData()
+        let newRow = currentCAURLs.count - 1
+        caURLsTableView.selectRowIndexes(IndexSet(integer: newRow), byExtendingSelection: false)
+        caURLsTableView.editColumn(0, row: newRow, with: nil, select: true)
+        fieldChanged()
+    }
+
+    @objc private func removeCAURL() {
+        let selectedRow = caURLsTableView.selectedRow
+        guard selectedRow >= 0 && selectedRow < currentCAURLs.count else { return }
+        currentCAURLs.remove(at: selectedRow)
+        caURLsTableView.reloadData()
+        fieldChanged()
     }
 
     private func createAuthMethodRow() -> NSStackView {
@@ -412,7 +502,8 @@ class ConfigurationWindowController: NSWindowController {
         let broker = configStore.brokers[index]
 
         nameField.stringValue = broker.name
-        caURLField.stringValue = broker.caURL
+        currentCAURLs = broker.caURLs
+        caURLsTableView.reloadData()
         authMethodPopup.selectItem(at: AuthMethod.allCases.firstIndex(of: broker.authMethod) ?? 0)
         oidcIssuerField.stringValue = broker.oidcIssuer ?? ""
         oidcClientIDField.stringValue = broker.oidcClientID ?? ""
@@ -428,7 +519,9 @@ class ConfigurationWindowController: NSWindowController {
 
     private func setFieldsEnabled(_ enabled: Bool) {
         nameField?.isEnabled = enabled
-        caURLField?.isEnabled = enabled
+        caURLsTableView?.isEnabled = enabled
+        addURLButton?.isEnabled = enabled
+        removeURLButton?.isEnabled = enabled
         authMethodPopup?.isEnabled = enabled
         oidcIssuerField?.isEnabled = enabled
         oidcClientIDField?.isEnabled = enabled
@@ -442,7 +535,8 @@ class ConfigurationWindowController: NSWindowController {
 
     private func clearFields() {
         nameField?.stringValue = ""
-        caURLField?.stringValue = ""
+        currentCAURLs = []
+        caURLsTableView?.reloadData()
         authMethodPopup?.selectItem(at: 0)
         oidcIssuerField?.stringValue = ""
         oidcClientIDField?.stringValue = ""
@@ -509,7 +603,7 @@ class ConfigurationWindowController: NSWindowController {
         let oldName = broker.name
 
         broker.name = nameField.stringValue
-        broker.caURL = caURLField.stringValue
+        broker.caURLs = currentCAURLs
         broker.authMethod = AuthMethod.allCases[authMethodPopup.indexOfSelectedItem]
         broker.oidcIssuer = oidcIssuerField.stringValue.isEmpty ? nil : oidcIssuerField.stringValue
         broker.oidcClientID = oidcClientIDField.stringValue.isEmpty ? nil : oidcClientIDField.stringValue
@@ -545,6 +639,18 @@ class ConfigurationWindowController: NSWindowController {
 
 extension ConfigurationWindowController: NSTextFieldDelegate {
     func controlTextDidChange(_ obj: Notification) {
+        guard let textField = obj.object as? NSTextField else {
+            fieldChanged()
+            return
+        }
+
+        // Check if this is a URL table cell edit
+        if textField.superview is NSTableCellView,
+           let row = caURLsTableView?.row(for: textField),
+           row >= 0 && row < currentCAURLs.count {
+            currentCAURLs[row] = textField.stringValue
+        }
+
         // Auto-save on every keystroke
         fieldChanged()
     }
@@ -552,12 +658,48 @@ extension ConfigurationWindowController: NSTextFieldDelegate {
 
 extension ConfigurationWindowController: NSTableViewDataSource {
     func numberOfRows(in tableView: NSTableView) -> Int {
-        configStore.brokers.count
+        if tableView === caURLsTableView {
+            return currentCAURLs.count
+        }
+        return configStore.brokers.count
+    }
+
+    func tableView(_ tableView: NSTableView, objectValueFor tableColumn: NSTableColumn?, row: Int) -> Any? {
+        if tableView === caURLsTableView {
+            return currentCAURLs[row]
+        }
+        return nil
+    }
+
+    func tableView(_ tableView: NSTableView, setObjectValue object: Any?, for tableColumn: NSTableColumn?, row: Int) {
+        if tableView === caURLsTableView, let value = object as? String {
+            currentCAURLs[row] = value
+            fieldChanged()
+        }
     }
 }
 
 extension ConfigurationWindowController: NSTableViewDelegate {
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+        if tableView === caURLsTableView {
+            let cell = NSTableCellView()
+            cell.identifier = NSUserInterfaceItemIdentifier("URLCell")
+
+            let textField = NSTextField()
+            textField.stringValue = currentCAURLs[row]
+            textField.isBordered = false
+            textField.drawsBackground = false
+            textField.isEditable = true
+            textField.delegate = self
+            textField.frame = NSRect(x: 2, y: 0, width: 426, height: 20)
+            textField.tag = row
+            cell.addSubview(textField)
+            cell.textField = textField
+
+            return cell
+        }
+
+        // Broker list table
         let broker = configStore.brokers[row]
         let state = brokerManager.state(for: broker.name)
 
@@ -593,7 +735,10 @@ extension ConfigurationWindowController: NSTableViewDelegate {
     }
 
     func tableViewSelectionDidChange(_ notification: Notification) {
-        let row = brokerListView.selectedRow
-        selectedBrokerIndex = row >= 0 ? row : nil
+        guard let tableView = notification.object as? NSTableView else { return }
+        if tableView === brokerListView {
+            let row = brokerListView.selectedRow
+            selectedBrokerIndex = row >= 0 ? row : nil
+        }
     }
 }

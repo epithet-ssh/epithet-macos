@@ -96,7 +96,8 @@ class BrokerManager {
         do {
             try process.run()
             processes[broker.name] = process
-            appendLog("Starting broker with CA: \(broker.caURL)\n", for: broker.name)
+            let urlsDescription = broker.caURLs.joined(separator: ", ")
+            appendLog("Starting broker with CA URLs: \(urlsDescription)\n", for: broker.name)
 
             // Give the broker a moment to start, then discover runtime dir
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
@@ -186,7 +187,9 @@ class BrokerManager {
         // Add verbosity flags
         args.append(contentsOf: broker.verbosity.flags)
 
-        args.append(contentsOf: ["--ca-url", broker.caURL])
+        for url in broker.caURLs {
+            args.append(contentsOf: ["--ca-url", url])
+        }
         args.append(contentsOf: ["--ca-timeout", "\(broker.caTimeout)s"])
         args.append(contentsOf: ["--ca-cooldown", "\(broker.caCooldown)s"])
 
