@@ -72,6 +72,10 @@ This enables seamless SSH certificate authentication through your configured bro
 - Broker configs: `~/Library/Application Support/EpithetAgent/config.json`
 - Broker runtime data: `~/.epithet/<broker-hash>/`
 
+## Releases
+
+Releases are coordinated via the [packaging](https://github.com/epithet-ssh/packaging) repository, which orchestrates unified releases across all epithet-ssh projects.
+
 ## License
 
 Licensed under the Apache License, Version 2.0. See [LICENSE-2.0.txt](LICENSE-2.0.txt) for details.
