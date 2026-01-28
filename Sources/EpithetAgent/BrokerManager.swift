@@ -9,7 +9,6 @@ class BrokerManager {
     private var logs: [String: String] = [:]  // keyed by broker name
     private var logHandles: [String: (stdout: FileHandle, stderr: FileHandle)] = [:]
     private let configStore = BrokerConfigStore.shared
-    private let sshConfigManager = SSHConfigManager.shared
 
     var onStateChange: ((String, BrokerState) -> Void)?
     var onLogUpdate: ((String) -> Void)?  // called with broker name when logs update
@@ -252,7 +251,6 @@ class BrokerManager {
 
             if let runtimeDir = foundDir {
                 setState(.running(pid: process.processIdentifier, runtimeDir: runtimeDir), for: broker.name)
-                sshConfigManager.updateSSHConfig()
             } else {
                 // Keep checking for a bit
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
@@ -288,8 +286,6 @@ class BrokerManager {
             appendLog("\nBroker exited with code \(process.terminationStatus)\n", for: broker.name)
             setState(.error("Exited with code \(process.terminationStatus)"), for: broker.name)
         }
-
-        sshConfigManager.updateSSHConfig()
     }
 
     private func setState(_ state: BrokerState, for brokerName: String) {

@@ -54,10 +54,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        // Stop all running brokers gracefully
+        // Stop all running brokers gracefully.
         brokerManager.stopAll()
-
-        // Update SSH config to remove running brokers
-        sshConfigManager.updateSSHConfig()
     }
 }
