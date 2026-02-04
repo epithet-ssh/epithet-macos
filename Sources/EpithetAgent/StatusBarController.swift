@@ -120,23 +120,36 @@ class StatusBarController {
         item.representedObject = broker.name
 
         // Set state indicator via image
-        let indicatorImage: NSImage?
+        let symbolName: String
+        let description: String
+        let shouldTint: Bool
+
         switch state {
         case .running:
-            indicatorImage = NSImage(systemSymbolName: "circle.fill", accessibilityDescription: "Running")
-            indicatorImage?.isTemplate = false
-            item.image = indicatorImage?.tinted(with: .systemGreen)
+            symbolName = "circle.fill"
+            description = "Running"
+            shouldTint = true
         case .starting:
-            indicatorImage = NSImage(systemSymbolName: "circle.fill", accessibilityDescription: "Starting")
-            indicatorImage?.isTemplate = false
-            item.image = indicatorImage?.tinted(with: .systemYellow)
+            symbolName = "circle.fill"
+            description = "Starting"
+            shouldTint = true
         case .error:
-            indicatorImage = NSImage(systemSymbolName: "exclamationmark.circle.fill", accessibilityDescription: "Error")
-            indicatorImage?.isTemplate = false
-            item.image = indicatorImage?.tinted(with: .systemRed)
+            symbolName = "exclamationmark.circle.fill"
+            description = "Error"
+            shouldTint = true
         case .stopped:
-            indicatorImage = NSImage(systemSymbolName: "circle", accessibilityDescription: "Stopped")
-            item.image = indicatorImage
+            symbolName = "circle"
+            description = "Stopped"
+            shouldTint = false
+        }
+
+        if let indicatorImage = NSImage(systemSymbolName: symbolName, accessibilityDescription: description) {
+            if shouldTint {
+                indicatorImage.isTemplate = false
+                item.image = indicatorImage.tinted(with: state.indicatorColor)
+            } else {
+                item.image = indicatorImage
+            }
         }
 
         return item

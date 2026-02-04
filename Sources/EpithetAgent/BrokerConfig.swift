@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 
 enum AuthMethod: String, Codable, CaseIterable {
     case autoDiscover
@@ -137,6 +138,15 @@ enum BrokerState: Equatable {
         case .starting: return "Starting..."
         case .running: return "Running"
         case .error(let msg): return "Error: \(msg)"
+        }
+    }
+
+    var indicatorColor: NSColor {
+        switch self {
+        case .running: return .systemGreen
+        case .starting: return .systemYellow
+        case .error: return .systemRed
+        case .stopped: return .systemGray
         }
     }
 }

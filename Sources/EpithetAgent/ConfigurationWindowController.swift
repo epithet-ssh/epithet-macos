@@ -710,17 +710,7 @@ extension ConfigurationWindowController: NSTableViewDelegate {
         let indicator = NSView(frame: NSRect(x: 8, y: 11, width: 10, height: 10))
         indicator.wantsLayer = true
         indicator.layer?.cornerRadius = 5
-
-        switch state {
-        case .running:
-            indicator.layer?.backgroundColor = NSColor.systemGreen.cgColor
-        case .starting:
-            indicator.layer?.backgroundColor = NSColor.systemYellow.cgColor
-        case .error:
-            indicator.layer?.backgroundColor = NSColor.systemRed.cgColor
-        case .stopped:
-            indicator.layer?.backgroundColor = NSColor.systemGray.cgColor
-        }
+        indicator.layer?.backgroundColor = state.indicatorColor.cgColor
 
         cell.addSubview(indicator)
 
