@@ -68,7 +68,7 @@ class BrokerManager {
         outputPipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
             let data = handle.availableData
             if !data.isEmpty, let str = String(data: data, encoding: .utf8) {
-                DispatchQueue.main.async {
+                DispatchQueue.main.async { [weak self] in
                     self?.appendLog(str, for: broker.name)
                 }
             }
@@ -78,7 +78,7 @@ class BrokerManager {
         errorPipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
             let data = handle.availableData
             if !data.isEmpty, let str = String(data: data, encoding: .utf8) {
-                DispatchQueue.main.async {
+                DispatchQueue.main.async { [weak self] in
                     self?.appendLog(str, for: broker.name)
                 }
             }
