@@ -1,5 +1,12 @@
 import AppKit
 
+// Extension to convert empty strings to nil
+extension String {
+    var nonEmptyOrNil: String? {
+        isEmpty ? nil : self
+    }
+}
+
 class ConfigurationWindowController: NSWindowController {
     private let configStore = BrokerConfigStore.shared
     private let brokerManager = BrokerManager.shared
@@ -605,10 +612,10 @@ class ConfigurationWindowController: NSWindowController {
         broker.name = nameField.stringValue
         broker.caURLs = currentCAURLs
         broker.authMethod = AuthMethod.allCases[authMethodPopup.indexOfSelectedItem]
-        broker.oidcIssuer = oidcIssuerField.stringValue.isEmpty ? nil : oidcIssuerField.stringValue
-        broker.oidcClientID = oidcClientIDField.stringValue.isEmpty ? nil : oidcClientIDField.stringValue
-        broker.oidcClientSecret = oidcClientSecretField.stringValue.isEmpty ? nil : oidcClientSecretField.stringValue
-        broker.authCommand = authCommandField.stringValue.isEmpty ? nil : authCommandField.stringValue
+        broker.oidcIssuer = oidcIssuerField.stringValue.nonEmptyOrNil
+        broker.oidcClientID = oidcClientIDField.stringValue.nonEmptyOrNil
+        broker.oidcClientSecret = oidcClientSecretField.stringValue.nonEmptyOrNil
+        broker.authCommand = authCommandField.stringValue.nonEmptyOrNil
         broker.caTimeout = Int(caTimeoutField.stringValue) ?? 15
         broker.caCooldown = Int(caCooldownField.stringValue) ?? 600
         broker.verbosity = Verbosity.allCases[verbosityPopup.indexOfSelectedItem]

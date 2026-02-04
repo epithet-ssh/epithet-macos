@@ -1,4 +1,7 @@
 import Foundation
+import os
+
+private let logger = Logger(subsystem: "dev.epithet.agent", category: "SSHConfig")
 
 class SSHConfigManager {
     static let shared = SSHConfigManager()
@@ -57,7 +60,7 @@ class SSHConfigManager {
             // Ensure proper permissions.
             try fileManager.setAttributes([.posixPermissions: 0o600], ofItemAtPath: sshConfigPath)
         } catch {
-            print("Failed to update SSH config: \(error)")
+            logger.error("Failed to update SSH config: \(error)")
         }
     }
 }

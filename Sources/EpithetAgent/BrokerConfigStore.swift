@@ -1,4 +1,7 @@
 import Foundation
+import os
+
+private let logger = Logger(subsystem: "dev.epithet.agent", category: "ConfigStore")
 
 class BrokerConfigStore {
     static let shared = BrokerConfigStore()
@@ -36,7 +39,7 @@ class BrokerConfigStore {
             let container = try JSONDecoder().decode(ConfigContainer.self, from: data)
             brokers = container.brokers
         } catch {
-            print("Failed to load broker configs: \(error)")
+            logger.error("Failed to load broker configs: \(error)")
             brokers = []
         }
     }
@@ -48,7 +51,7 @@ class BrokerConfigStore {
             try data.write(to: configFileURL, options: .atomic)
             onChange?()
         } catch {
-            print("Failed to save broker configs: \(error)")
+            logger.error("Failed to save broker configs: \(error)")
         }
     }
 

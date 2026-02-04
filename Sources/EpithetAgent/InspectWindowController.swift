@@ -4,6 +4,10 @@ class InspectWindowController: NSWindowController {
     private let brokerManager = BrokerManager.shared
     private let configStore = BrokerConfigStore.shared
 
+    // Constants
+    private static let autoRefreshInterval: TimeInterval = 30.0
+    private static let inspectSplitRatio: CGFloat = 0.55
+
     private var tabView: NSTabView!
     private var noRunningBrokersLabel: NSTextField!
     private var refreshButton: NSButton!
@@ -141,7 +145,7 @@ class InspectWindowController: NSWindowController {
 
         // Set initial split position (55% inspect, 45% logs)
         DispatchQueue.main.async {
-            splitView.setPosition(splitView.bounds.height * 0.55, ofDividerAt: 0)
+            splitView.setPosition(splitView.bounds.height * Self.inspectSplitRatio, ofDividerAt: 0)
         }
 
         return splitView
@@ -256,7 +260,7 @@ class InspectWindowController: NSWindowController {
 
     @objc private func toggleAutoRefresh(_ sender: NSButton) {
         if sender.state == .on {
-            autoRefreshTimer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { [weak self] _ in
+            autoRefreshTimer = Timer.scheduledTimer(withTimeInterval: Self.autoRefreshInterval, repeats: true) { [weak self] _ in
                 self?.refresh()
             }
         } else {

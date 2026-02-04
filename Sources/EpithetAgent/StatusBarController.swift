@@ -1,5 +1,8 @@
 import AppKit
 import ServiceManagement
+import os
+
+private let logger = Logger(subsystem: "dev.epithet.agent", category: "StatusBar")
 
 class StatusBarController {
     private var statusItem: NSStatusItem
@@ -108,7 +111,7 @@ class StatusBarController {
                     launchAtLoginItem.state = .on
                 }
             } catch {
-                print("Failed to toggle launch at login: \(error)")
+                logger.error("Failed to toggle launch at login: \(error)")
             }
         }
     }
