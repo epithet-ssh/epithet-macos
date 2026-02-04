@@ -7,6 +7,7 @@ BUNDLE_DIR = $(BUILD_DIR)/$(BUNDLE_NAME)
 DMG_NAME = EpithetAgent.dmg
 DMG_PATH = $(BUILD_DIR)/$(DMG_NAME)
 EPITHET_REPO = epithet-ssh/epithet
+HOMEBREW_TAP_DIR = ../homebrew-tap
 
 # Signing and notarization (optional - set these env vars for signed releases)
 # DEVELOPER_ID - Signing identity, e.g., "Developer ID Application: Your Name (TEAMID)"
@@ -14,7 +15,7 @@ EPITHET_REPO = epithet-ssh/epithet
 # TEAM_ID      - Your Apple Developer Team ID
 # APP_PASSWORD - App-specific password for notarytool
 
-.PHONY: all build build-release bundle run clean fetch-epithet sign notarize dmg release
+.PHONY: all build build-release bundle run clean fetch-epithet sign notarize dmg release update-version homebrew-cask-update
 
 all: build
 
@@ -85,6 +86,16 @@ install: bundle-release
 	@rm -rf "/Applications/$(BUNDLE_NAME)"
 	@cp -r "$(BUNDLE_DIR)" "/Applications/"
 	@echo "Installed to /Applications/$(BUNDLE_NAME)"
+
+# Update version in Info.plist (requires VERSION)
+update-version:
+ifndef VERSION
+	$(error VERSION is not set. Usage: make update-version VERSION=1.0.0)
+endif
+	@echo "Updating version to $(VERSION) in Info.plist..."
+	@sed -i.bak 's|<key>CFBundleShortVersionString</key>[\s]*<string>.*</string>|<key>CFBundleShortVersionString</key>\n    <string>$(VERSION)</string>|' Resources/Info.plist
+	@rm Resources/Info.plist.bak
+	@echo "Version updated to $(VERSION)"
 
 # Code sign the app bundle (requires DEVELOPER_ID)
 sign: bundle-release
@@ -170,12 +181,37 @@ dmg-signed: notarize
 	@echo "Signed DMG created at $(DMG_PATH)"
 
 # Create GitHub release with signed DMG (requires VERSION)
-release: dmg-signed
+release: update-version dmg-signed
 ifndef VERSION
 	$(error VERSION is not set. Usage: make release VERSION=1.0.0)
 endif
+	@echo "Renaming DMG with version..."
+	@mv "$(DMG_PATH)" "$(BUILD_DIR)/EpithetAgent-$(VERSION).dmg"
+	@echo "Tagging repository..."
+	@git tag -a "v$(VERSION)" -m "v$(VERSION)"
+	@git push origin "v$(VERSION)"
 	@echo "Creating GitHub release v$(VERSION)..."
-	@gh release create "v$(VERSION)" "$(DMG_PATH)" \
+	@gh release create "v$(VERSION)" "$(BUILD_DIR)/EpithetAgent-$(VERSION).dmg" \
 		--title "Epithet Agent v$(VERSION)" \
 		--generate-notes
 	@echo "Release v$(VERSION) published to GitHub"
+
+# Update Homebrew cask (requires VERSION, run after release)
+homebrew-cask-update:
+ifndef VERSION
+	$(error VERSION is not set. Usage: make homebrew-cask-update VERSION=1.0.0)
+endif
+	@echo "Calculating SHA256 of DMG..."
+	@SHA_DMG=$$(shasum -a 256 "$(BUILD_DIR)/EpithetAgent-$(VERSION).dmg" | awk '{print $$1}'); \
+	echo "Generating Homebrew cask from template..."; \
+	sed -e "s/{{VERSION}}/$(VERSION)/g" \
+	    -e "s/{{SHA_DMG}}/$$SHA_DMG/g" \
+	    templates/epithet-agent-mac.rb.tmpl > "$(HOMEBREW_TAP_DIR)/Casks/epithet-agent-mac.rb"
+	@echo "Auditing cask..."
+	@cd "$(HOMEBREW_TAP_DIR)" && brew audit --strict --cask epithet-agent-mac
+	@echo "Committing to homebrew-tap..."
+	@cd "$(HOMEBREW_TAP_DIR)" && \
+		git add Casks/epithet-agent-mac.rb && \
+		git commit -m "feat: update epithet-agent-mac to $(VERSION)" && \
+		git push origin main
+	@echo "Homebrew cask updated to $(VERSION)"

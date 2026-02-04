@@ -74,7 +74,32 @@ This enables seamless SSH certificate authentication through your configured bro
 
 ## Releases
 
-Releases are coordinated via the [packaging](https://github.com/epithet-ssh/packaging) repository, which orchestrates unified releases across all epithet-ssh projects.
+This project releases independently with its own version numbers. Download signed DMG installers from [GitHub Releases](https://github.com/epithet-ssh/epithet-macos/releases).
+
+### For Maintainers
+
+Release a new version:
+
+```bash
+# Prerequisites:
+# - Apple Developer credentials (DEVELOPER_ID, APPLE_ID, TEAM_ID, APP_PASSWORD)
+# - gh CLI authenticated with GitHub
+
+# Create and publish a release
+make release VERSION=1.0.0
+
+# Optionally update Homebrew cask
+make homebrew-cask-update VERSION=1.0.0
+```
+
+The release process:
+1. Updates version in Info.plist
+2. Builds, signs, and notarizes the app
+3. Creates versioned DMG
+4. Tags the repository
+5. Publishes to GitHub releases
+
+The `epithet` binary is automatically fetched from the latest CLI release - no version coordination needed.
 
 ## License
 

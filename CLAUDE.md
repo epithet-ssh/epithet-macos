@@ -60,3 +60,62 @@ SPEC.md                 # Feature specification
 - Broker configs: `~/Library/Application Support/EpithetAgent/config.json`
 - SSH config fragment: `~/Library/Application Support/EpithetAgent/ssh-config.conf`
 - SSH integration: Adds Include directive to `~/.ssh/config`
+
+## Release Process
+
+This project releases independently from the epithet CLI. Releases are version-controlled and published to GitHub with signed/notarized DMG files.
+
+### Prerequisites
+
+- Apple Developer credentials (DEVELOPER_ID, APPLE_ID, TEAM_ID, APP_PASSWORD)
+- Set in `.envrc` or export manually
+- `gh` CLI authenticated with GitHub
+- `brew` for cask audit (optional but recommended)
+
+### Creating a Release
+
+```bash
+# Full release workflow
+make release VERSION=1.0.0
+
+# This will:
+# 1. Update version in Info.plist
+# 2. Build, sign, and notarize the app
+# 3. Create versioned DMG: EpithetAgent-1.0.0.dmg
+# 4. Tag the repo: v1.0.0
+# 5. Push tag to GitHub
+# 6. Create GitHub release with DMG attachment
+
+# Optional: Update Homebrew cask
+make homebrew-cask-update VERSION=1.0.0
+```
+
+### Version Management
+
+Versions are **independent** from the epithet CLI binary. The macOS app can release updates without coordinating with CLI releases.
+
+The epithet binary is **auto-fetched** from the latest GitHub release during build:
+- Automatically fetched by `make build` if not present
+- Manually update: `make fetch-epithet`
+- No version coordination needed - always uses latest
+
+### Manual Release Steps
+
+If you need fine-grained control:
+
+```bash
+# 1. Update version
+make update-version VERSION=1.0.0
+
+# 2. Build signed DMG
+make dmg-signed
+
+# 3. Tag and push
+git tag -a v1.0.0 -m "v1.0.0"
+git push origin v1.0.0
+
+# 4. Create GitHub release
+gh release create v1.0.0 .build/EpithetAgent-1.0.0.dmg \
+  --title "Epithet Agent v1.0.0" \
+  --generate-notes
+```
