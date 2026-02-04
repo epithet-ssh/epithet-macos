@@ -13,6 +13,14 @@ class BrokerManager {
     var onStateChange: ((String, BrokerState) -> Void)?
     var onLogUpdate: ((String) -> Void)?  // called with broker name when logs update
 
+    // Constants for log management
+    private static let maxLogSize = 100_000
+    private static let trimmedLogSize = 80_000
+
+    // Constants for runtime directory discovery
+    private static let initialDiscoveryDelay: TimeInterval = 0.5
+    private static let retryDiscoveryDelay: TimeInterval = 1.0
+
     private init() {}
 
     var epithetBinaryPath: String {
@@ -99,7 +107,7 @@ class BrokerManager {
             appendLog("Starting broker with CA URLs: \(urlsDescription)\n", for: broker.name)
 
             // Give the broker a moment to start, then discover runtime dir
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            DispatchQueue.main.asyncAfter(deadline: .now() + Self.initialDiscoveryDelay) { [weak self] in
                 self?.discoverRuntimeDir(for: broker, process: process)
             }
         } catch {
@@ -114,9 +122,9 @@ class BrokerManager {
         }
         logs[brokerName]! += text
 
-        // Limit log size to ~100KB
-        if let log = logs[brokerName], log.count > 100_000 {
-            logs[brokerName] = String(log.suffix(80_000))
+        // Limit log size to prevent excessive memory usage
+        if let log = logs[brokerName], log.count > Self.maxLogSize {
+            logs[brokerName] = String(log.suffix(Self.trimmedLogSize))
         }
 
         onLogUpdate?(brokerName)
@@ -253,7 +261,7 @@ class BrokerManager {
                 setState(.running(pid: process.processIdentifier, runtimeDir: runtimeDir), for: broker.name)
             } else {
                 // Keep checking for a bit
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                DispatchQueue.main.asyncAfter(deadline: .now() + Self.retryDiscoveryDelay) { [weak self] in
                     if process.isRunning {
                         self?.discoverRuntimeDir(for: broker, process: process)
                     }
@@ -261,7 +269,7 @@ class BrokerManager {
             }
         } catch {
             // Directory doesn't exist yet, retry
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            DispatchQueue.main.asyncAfter(deadline: .now() + Self.retryDiscoveryDelay) { [weak self] in
                 if process.isRunning {
                     self?.discoverRuntimeDir(for: broker, process: process)
                 }
